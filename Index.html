@@ -1,0 +1,373 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Legend of the Secret: a timing RPG</title>
+<style>
+:root{--bg:#0b0a12;--pn:#15131f;--ln:#e8e2d0;--fg:#f1ecdc;--mu:#8f89a3;--gr:#4ff08a;--or:#ff9a2e;--rd:#ff4a5c;--ye:#ffd84a;color-scheme:dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.45 "Courier New",Courier,monospace}
+#app{max-width:780px;margin:0 auto;padding:12px;position:relative;z-index:1}#bg{position:fixed;inset:0;z-index:0;background-size:cover;background-position:center bottom;background-repeat:no-repeat}#log{background:rgba(10,8,18,.94)}#hdr,#bst{text-shadow:0 0 4px #000,0 0 6px #000}
+h1{font-size:26px;margin:8px 0 2px;letter-spacing:1px}
+.mu{color:var(--mu)}
+.card{border:3px solid var(--ln);background:var(--pn);padding:8px;position:relative}
+button{font:inherit;color:var(--fg);background:#000;border:3px solid var(--ln);padding:8px 12px;cursor:pointer}
+button:hover:not(:disabled){background:var(--ye);color:#000;border-color:var(--ye)}
+button:disabled{opacity:.35;cursor:not-allowed}
+button:focus-visible,input:focus-visible{outline:3px solid var(--ye)}
+#grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px;margin:12px 0}
+.cls{cursor:pointer;text-align:left}
+.cls.sel{border-color:var(--ye)!important;box-shadow:0 0 0 3px var(--ye)}
+.cls b{font-size:16px}.cls small{display:block;color:var(--mu)}
+.badge{position:absolute;top:6px;right:8px;color:var(--ye);font-weight:bold}
+.names{display:grid;gap:6px;margin:10px 0}
+.names label{display:flex;gap:8px;align-items:center}
+input{font:inherit;background:#000;color:var(--fg);border:3px solid var(--ln);padding:6px;flex:1;min-width:0}
+#game{display:none}
+#hdr{display:flex;justify-content:space-between;margin-bottom:8px}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.e{flex:1;min-width:150px;text-align:center}
+.e.boss{flex-basis:100%}
+.dead{opacity:.3;filter:grayscale(1)}
+.hp{height:20px;position:relative;background:#000;border:2px solid var(--ln);margin:4px 0}
+.hp i{display:block;height:100%;background:var(--gr);transition:width .3s}.hp .pend{position:absolute;top:0;bottom:0;background:repeating-linear-gradient(45deg,#8dffc0 0 5px,#2fae6a 5px 10px);box-shadow:0 0 8px #7dffb0}
+.e .hp i{background:var(--rd)}.hp span{position:absolute;inset:0;font-size:12px;line-height:16px;font-weight:bold;color:#fff;text-shadow:0 0 3px #000,0 0 3px #000}.ih{display:flex;flex-direction:column;align-items:center;gap:4px;margin-bottom:6px}.ic svg{vertical-align:middle;filter:drop-shadow(0 0 4px rgba(0,0,0,.6))}#dmg{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}.chip{padding:5px 9px;font-weight:bold;font-size:15px;color:#fff;border-left:6px solid #fff}.chip u{text-decoration:none;font-size:17px}.ce{background:#7a5600;border-color:var(--ye)}.cp{background:#8a1b2c;border-color:var(--rd)}.cb{background:#7a4510;border-color:var(--or)}.cg{background:#12633a;border-color:var(--gr)}.hp.mp.rdy{border-color:var(--ye);box-shadow:0 0 10px var(--ye)}.e .hp.mp i{background:#58a6ff}
+.party{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px}
+.m{padding-top:20px}
+.m.act{border-color:var(--ye)!important}.m.inv{border-style:dashed!important;box-shadow:0 0 12px #b08cff}
+.m.targeted{border-color:var(--rd)!important;animation:pl .35s infinite alternate;background:#4a1020!important}
+.m.targeted::before{content:"▼ TARGETED ▼";position:absolute;top:1px;left:0;right:0;text-align:center;color:var(--rd);font-weight:bold;font-size:12px}
+.m.act::before{content:"▶ ACTING";position:absolute;top:1px;left:0;right:0;text-align:center;color:var(--ye);font-size:12px}
+.m.dead::before{content:"FALLEN";position:absolute;top:1px;left:0;right:0;text-align:center;color:var(--mu);font-size:12px}
+@keyframes pl{to{transform:translateY(-3px);box-shadow:0 0 14px var(--rd)}}
+#sp{height:12px;background:#000;border:2px solid var(--ln);margin:2px 0 10px}
+#sp i{display:block;height:100%;background:var(--ye);width:20%;transition:width .3s}#sp.cold{border-color:#58a6ff}#sp.cold i{background:#58a6ff}.tag{display:inline-block;padding:1px 6px;border:2px solid currentColor;margin:3px 4px 0 0;font-weight:bold;font-size:12px}#bst{min-height:4px;margin-bottom:6px}#bst .tag{font-size:15px;padding:3px 8px}
+#msg{height:176px;overflow-y:auto;white-space:pre-line}.chips{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0}.bs{background:#9a1226;color:#fff;border-left:6px solid #ff4a5c;padding:7px 10px;margin:6px 0;font-weight:bold;font-size:16px}#aud{display:flex;gap:6px;justify-content:flex-end;margin-bottom:6px}#aud button{padding:4px 8px;font-size:13px}
+#tw{display:none;margin:8px 0}
+#bar{position:relative;height:48px;background:#000;border:3px solid var(--ln);overflow:hidden}
+.z{position:absolute;top:0;bottom:0;box-shadow:inset 0 0 0 1px rgba(0,0,0,.75)}.z.o{background:var(--or)}.z.g{background:var(--gr)}
+#cur{position:absolute;top:0;bottom:0;width:.8%;min-width:3px;background:#fff;box-shadow:0 0 8px #fff}
+#go{width:100%;margin-top:6px;padding:12px;font-weight:bold}
+#res{text-align:center;font-size:22px;font-weight:bold;min-height:30px}
+#menu{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+@media(max-width:560px){.party{grid-template-columns:1fr}.m{padding-top:20px}#app{padding:6px}#bar{height:64px}#go{padding:20px;font-size:18px}#msg{height:150px}}
+@media(prefers-reduced-motion:reduce){.m.targeted{animation:none}}
+</style></head><body><div id="bg"></div><div id="app"><div id="aud"><button id="bm"></button><button id="bs"></button></div>
+<div id="setup">
+<h1>Legend of the Secret</h1>
+<div class="mu">Choose 3 different classes, name your party, and survive 5 areas. Fallen heroes stay fallen.</div>
+<div id="grid"></div><div class="names" id="names"></div>
+<button id="begin" disabled>Begin adventure</button>
+</div>
+<div id="game">
+<div id="hdr"><b id="area"></b><span id="spl">SP</span></div><div id="sp"><i></i></div><div id="bst"></div>
+<div class="row" id="en"></div>
+<div class="card" id="log"><div id="msg"></div>
+<div id="tw"><div id="bar"><div class="z o"></div><div class="z g"></div><div id="cur"></div></div><div id="res"></div><button id="go">PRESS</button></div>
+<div id="menu"></div></div>
+<div class="party" id="pt" style="margin-top:10px"></div>
+</div></div>
+<script>
+const $=s=>document.querySelector(s),sleep=ms=>new Promise(r=>setTimeout(r,ms)),rnd=(a,b)=>a+Math.random()*(b-a),pk=a=>a[Math.floor(Math.random()*a.length)];
+function PM(x,e){return(x.cls=='Warrior'&&x.hp<=x.mh/2?.7:x.cls=='Mage'?1.15:x.cls=='Warlock'?1.1:1)}
+function ZG(t){const o=t.length==1;return(o&&t[0].dbl?2:1)*(o&&t[0].cls=='Rogue'?1.25:1)*(alive(G.p).some(y=>y.cls=='Valkyrie')?1.1:1)}
+const UP={Warrior:[['Vanguard',25,2,5,'Bulwark: used to cut damage by 50% -> now cuts 55%'],['Ironclad Colossus',30,2,0,'Bulwark: used to cut damage by 55% -> now cuts 60%']],Mage:[['Emberweaver',10,3,5,'Fireball: used to deal 0.9x damage -> now deals 1.0x'],['Starcaller',10,3,5,'Fireball: burn used to last 3 rounds -> now lasts 4 rounds']],Cleric:[['Lightbringer',12,1,5,'Mend: used to heal 20 + 1.5x ATK -> now heals 25 + 1.5x ATK'],['Seraph',13,1,0,'Mend: used to heal 25 + 1.5x ATK -> now heals 30 + 1.5x ATK']],Rogue:[['Nightshade',8,3,5,'Pickpocket: used to turn 50% of stolen magic into SP -> now 55%'],['Phantom',8,3,5,'Pickpocket: used to turn 55% of stolen magic into SP -> now 60%']],Huntress:[['Windrunner',10,2,5,'Volley: arrows used to deal 0.85x damage -> now 0.92x'],['Moonhunter',10,3,0,'Volley: arrows used to deal 0.92x damage -> now 1.0x']],Duelist:[['Blademaster',12,3,5,'Riposte: strike used to deal 1.2x damage -> now 1.3x'],['Sword Saint',13,3,0,'Riposte: strike used to deal 1.3x damage -> now 1.4x']],Warlock:[['Hexcaster',10,3,5,'Life Drain: used to deal and heal 1.7x -> now 1.85x'],['Soul Reaver',10,3,0,'Life Drain: used to deal and heal 1.85x -> now 2.0x']],Berserker:[['Warbringer',15,3,0,'Rampage: used to cost 15 HP -> now costs 12 HP'],['Doomrager',15,3,5,'Rampage: used to deal 2.5x damage -> now deals 2.75x']],Valkyrie:[['Banner Knight',15,2,0,'Battle Hymn: used to boost 3 attacks -> now boosts 4'],['Sky Sovereign',15,2,5,'Battle Hymn: used to cut party damage by 20% -> now cuts 25%']]};
+const LV=u=>(u.lv||1)-1,CC=u=>CL[u.cls].c-(u.cd||0);
+function upTxt(u){const d=UP[u.cls][LV(u)];return `${u.nm}: ${u.tt||u.cls} -> ${d[0]}\n`+[d[1]?`HP ${u.mh} -> ${u.mh+d[1]}`:'',d[2]?`ATK ${u.atk} -> ${u.atk+d[2]}`:'',d[3]?`Skill cost ${CC(u)} -> ${CC(u)-d[3]} SP`:''].filter(Boolean).join(' | ')+'\n'+d[4]}
+function doUp(u){const d=UP[u.cls][LV(u)];u.lv=(u.lv||1)+1;u.tt=d[0];u.mh+=d[1];u.atk+=d[2];u.cd=(u.cd||0)+d[3]}
+const CL={
+Warrior:{i:'🛡️',hp:150,atk:12,sk:'Bulwark',c:20,t:'self',d:'Draws every enemy attack to him and reduces damage taken by 50% this round.'},
+Mage:{i:'🔮',hp:60,atk:18,sk:'Fireball',c:30,t:'enemy',d:'Lightly blasts every enemy and burns the chosen one: it cannot cast magic for 3 rounds.'},
+Cleric:{i:'✨',hp:95,atk:5,sk:'Mend',c:25,t:'ally',d:'Heals one ally. A perfect cast also cleanses poison.'},
+Rogue:{i:'🗡️',hp:70,atk:16,sk:'Pickpocket',c:20,t:'enemy',d:'Costs 70 SP. A light hit that steals the target’s magic bar (half of it becomes SP), doubles his parry range this round, and steals the target’s next turn: he acts in its place. A weak hit cannot steal the turn. Afterwards he is EXHAUSTED and cannot steal turns until an enemy attacks him or the battle ends.'},
+Huntress:{i:'🏹',hp:80,atk:15,sk:'Volley',c:25,t:'self',d:'Three arrows, each its own skill check, each at a random enemy. Crit all 3 and she turns invisible for 2 rounds: single-target attacks cannot find her, and her attacks deal +20%.'},
+Duelist:{i:'🤺',hp:100,atk:17,sk:'Riposte',c:20,t:'enemy',d:'Strike and bait the weakest enemy. Her next parry or block counters: a block deals light damage, a perfect parry kills (80 damage to bosses). After that she is weakened for a turn: no parry, block or Riposte.'},
+Warlock:{i:'👁️',hp:85,atk:15,sk:'Life Drain',c:25,t:'enemy',d:'Heavy hit that heals the caster by the damage dealt.'},
+Berserker:{i:'🪓',hp:130,atk:20,sk:'Rampage',c:15,t:'enemy',d:'Costs 15 HP. 2.5x damage, but overkill damage hits him too. The ability cannot kill him (HP floors at 1).'},
+Valkyrie:{i:'⚔️',hp:115,atk:10,sk:'Battle Hymn',c:25,t:'self',d:'The next 3 party attacks deal +50% damage, and the whole party takes 20% less damage this round.'}};
+const DN=['Aldric','Brienne','Cassian','Dara','Eryn','Fenwick','Gwen','Hale','Isolde'];
+Object.entries({Warrior:35,Mage:50,Cleric:40,Rogue:70,Huntress:45,Duelist:35,Warlock:45,Berserker:30,Valkyrie:35}).forEach(([k,v])=>CL[k].c=v);
+Object.entries({Warrior:'Unyielding: takes 30% less damage while at or below half HP.',Mage:'Frail Focus: takes 15% more damage, but his own green zones are 20% wider.',Cleric:'Devotion: while she lives, a perfect parry earns the party +2 SP (once per attack).',Rogue:'Nimble: his green parry zone is 25% wider.',Huntress:'Elusive: when an enemy picks her at random it gets a second roll, so she is targeted less often.',Duelist:'Showman: a perfect parry earns +3 extra SP.',Warlock:'Soul Harvest: heals 12 HP whenever an enemy is defeated, but takes 10% more damage.',Berserker:'Adrenaline: earns +3 SP whenever an attack hits him or is blocked.',Valkyrie:'Banner: while she lives, every ally’s green parry zone is 10% wider.'}).forEach(([k,v])=>CL[k].ps=v);
+const H={Warrior:0,Mage:220,Cleric:58,Rogue:150,Huntress:100,Duelist:335,Warlock:285,Berserker:16,Valkyrie:195,Slime:135,Wolf:212,Bandit:320,'Treant Elder':88,Skeleton:38,Ghost:168,'Bone Archer':75,'Lich Queen':275,Scorpion:350,'Fire Imp':8,'Sand Golem':28,'Sun Tyrant':48,'Ice Wraith':196,Yeti:205,'Frost Archer':232,'Frost Dragon':180,'Shadow Knight':250,'Void Mage':298,Demon:358,'Void Sovereign':262};
+const tile=h=>`background:hsl(${h} 45% 17%);border-color:hsl(${h} 70% 58%)`,tx=h=>`hsl(${h} 95% 72%)`,esc=s=>s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+const IC={
+Warrior:`<path d='M12 36C12 20 22 10 32 10s20 10 20 26v14H40V38H24v12H12z'/><path d='M23 28h18v7H23z' fill='#05050a'/><path d='M29 3h6v8h-6z'/>`,
+Mage:`<path d='M32 4l16 18-16 38L16 22z'/><path d='M16 22h32M32 4l-7 18 7 38 7-38z' fill='none' stroke-width='2'/>`,
+Cleric:`<path d='M25 5h14v19h19v14H39v21H25V38H6V24h19z'/><circle cx='32' cy='31' r='5' fill='#05050a'/>`,
+Rogue:`<path d='M32 6C18 6 10 18 10 32c0 12 8 26 22 26s22-14 22-26C54 18 46 6 32 6z'/><path d='M17 28l11 4-2 7-11-4zM47 28l-11 4 2 7 11-4z' fill='#05050a'/>`,
+Huntress:`<path d='M20 4C50 14 50 50 20 60c10-12 10-44 0-56z'/><path d='M6 30h42v4H6z'/><path d='M58 32L44 22v20z'/>`,
+Duelist:`<path d='M30 3h4l2 34h-8z'/><path d='M10 41c0-7 9-9 22-9s22 2 22 9c0 4-9 6-22 6S10 45 10 41z'/><path d='M29 47h6v9h-6z'/><circle cx='32' cy='59' r='3.5'/>`,
+Warlock:`<path d='M6 10c0 20 11 28 26 28S58 30 58 10c-6 10-14 14-26 14S12 20 6 10z'/><path d='M14 49c9-11 27-11 36 0-9 11-27 11-36 0z'/><circle cx='32' cy='49' r='5' fill='#05050a'/>`,
+Berserker:`<path d='M29 6h6v54h-6z'/><path d='M29 12C14 8 6 18 6 28c10-2 18-2 23 4z'/><path d='M35 12c15-4 23 6 23 16-10-2-18-2-23 4z'/>`,
+Valkyrie:`<path d='M30 52C22 38 10 34 3 14c14 2 22 7 27 17z'/><path d='M34 52c8-14 20-18 27-38-14 2-22 7-27 17z'/><path d='M29 12h6v48h-6z'/><path d='M32 1l6 11H26z'/>`};
+Object.assign(IC,{
+Slime:`<path d='M8 52C6 34 18 14 32 14s26 20 24 38z'/><circle cx='24' cy='36' r='4' fill='#05050a'/><circle cx='40' cy='36' r='4' fill='#05050a'/>`,
+Wolf:`<path d='M8 8l14 10h20L56 8l-2 26-12 22H22L10 34z'/><path d='M19 30l9 3-2 5zM45 30l-9 3 2 5z' fill='#05050a'/>`,
+Bandit:`<path d='M12 20c4-12 36-12 40 0l4 36H8z'/><path d='M14 32h36v10H14z' fill='#05050a'/><path d='M22 34h6v5h-6zM36 34h6v5h-6z'/>`,
+'Treant Elder':`<path d='M28 60V42C12 42 4 30 12 20 10 8 24 2 32 8c8-6 22 0 20 12 8 10 0 22-16 22v18z'/><path d='M23 22h6v7h-6zM37 22h6v7h-6z' fill='#05050a'/>`,
+Skeleton:`<path d='M32 6C18 6 10 16 10 28c0 8 4 12 8 14v10h28V42c4-2 8-6 8-14C54 16 46 6 32 6z'/><circle cx='23' cy='28' r='6' fill='#05050a'/><circle cx='41' cy='28' r='6' fill='#05050a'/><path d='M32 36l-3 7h6z' fill='#05050a'/>`,
+Ghost:`<path d='M10 58V28C10 14 20 6 32 6s22 8 22 22v30l-8-8-7 8-7-8-7 8-7-8z'/><circle cx='24' cy='28' r='4' fill='#05050a'/><circle cx='40' cy='28' r='4' fill='#05050a'/><ellipse cx='32' cy='41' rx='4' ry='5' fill='#05050a'/>`,
+'Bone Archer':`<path d='M30 8C20 8 14 16 14 26c0 7 3 10 6 12v8h20v-8c3-2 6-5 6-12C46 16 40 8 30 8z'/><circle cx='24' cy='26' r='4' fill='#05050a'/><circle cx='36' cy='26' r='4' fill='#05050a'/><path d='M2 54L58 8l3 5L7 59z'/><path d='M62 6l-13 3 7 9z'/>`,
+'Lich Queen':`<path d='M8 20l11 11 13-19 13 19 11-11-4 26H12z'/><path d='M14 50h36v9H14z'/><circle cx='32' cy='36' r='4' fill='#05050a'/>`,
+Scorpion:`<ellipse cx='28' cy='46' rx='15' ry='10'/><path d='M42 42c12-2 16-16 8-30l-6 4c4 8 2 14-6 18z'/><path d='M46 4l12 8-12 4z'/><path d='M6 26c0-8 8-12 16-8l-3 10zM8 54l10-4' stroke-width='3'/>`,
+'Fire Imp':`<path d='M32 3C34 16 50 22 50 40c0 12-8 20-18 20S14 52 14 40c0-8 4-12 8-16 0 6 4 8 6 8-4-12 0-20 4-29z'/><circle cx='26' cy='43' r='3.5' fill='#05050a'/><circle cx='38' cy='43' r='3.5' fill='#05050a'/>`,
+'Sand Golem':`<path d='M10 10h44v32H44v16H20V42H10z'/><path d='M18 22h10v8H18zM36 22h10v8H36z' fill='#05050a'/><path d='M26 46v10M38 46v10' fill='none' stroke-width='2'/>`,
+'Sun Tyrant':`<circle cx='32' cy='32' r='14'/><path d='M32 2l6 13H26zM32 62l-6-13h12zM2 32l13-6v12zM62 32l-13 6V26z'/><g transform='rotate(45 32 32)'><path d='M32 2l6 13H26zM32 62l-6-13h12zM2 32l13-6v12zM62 32l-13 6V26z'/></g><path d='M24 29h6v5h-6zM34 29h6v5h-6z' fill='#05050a'/>`,
+'Ice Wraith':`<path d='M32 3L50 24 40 60H24L14 24z'/><path d='M22 26l8 3-2 5zM42 26l-8 3 2 5z' fill='#05050a'/><path d='M26 44h12' fill='none' stroke-width='3'/>`,
+Yeti:`<path d='M6 28C6 12 18 4 32 4s26 8 26 24c0 14-8 28-26 28S6 42 6 28z'/><path d='M14 27h14v7H14zM36 27h14v7H36z' fill='#05050a'/><path d='M22 44l4 8 4-8 4 8 4-8' fill='none' stroke-width='3'/>`,
+'Frost Archer':`<path d='M32 3l8 14-4 36-4 8-4-8-4-36z'/><path d='M6 36l18-9v9zM58 36L40 27v9z'/>`,
+'Frost Dragon':`<path d='M4 40L18 12l8 10 6-16 6 16 8-10 14 28-14 4-6 12H24l-6-12z'/><path d='M20 34l9 2-2 5zM44 34l-9 2 2 5z' fill='#05050a'/>`,
+'Shadow Knight':`<path d='M8 4c8 4 10 12 10 18h28c0-6 2-14 10-18-2 14-4 20-8 24v22L38 60H26L16 50V28C12 24 10 18 8 4z'/><path d='M22 32h20v6H22z' fill='#05050a'/>`,
+'Void Mage':`<path d='M32 4C16 8 10 26 10 44v14h44V44C54 26 48 8 32 4z'/><path d='M19 30h26v15H19z' fill='#05050a'/><circle cx='26' cy='37' r='3.5'/><circle cx='38' cy='37' r='3.5'/>`,
+Demon:`<path d='M10 6c4 8 8 12 14 14h16c6-2 10-6 14-14 4 18-2 30-8 38l-6 14H24l-6-14C12 36 6 24 10 6z'/><path d='M19 30l11 4-3 6zM45 30l-11 4 3 6z' fill='#05050a'/><path d='M24 49h16' fill='none' stroke-width='3'/>`,
+'Void Sovereign':`<path d='M32 3l8 11 12-4-2 14 11 8-12 6 2 14-14-4-5 11-5-11-14 4 2-14L3 32l11-8-2-14 12 4z'/><circle cx='32' cy='33' r='10' fill='#05050a'/><circle cx='32' cy='33' r='4'/>`});
+const ico=(c,s)=>`<svg viewBox='0 0 64 64' width='${s}' height='${s}' fill='hsl(${H[c]} 85% 62%)' stroke='#05050a' stroke-width='3' stroke-linejoin='round' aria-hidden='true'>${IC[c]}</svg>`;
+// attack: [name,hits,dmg,durationMs,flags]  flags: all, sp, psn, drain, heal(dmg = fraction of max HP)
+const AR=[
+{n:'Whispering Forest',e:[['Slime',40,[['Splat',1,10,1400]]],['Wolf',34,[['Bite',2,7,1100]]],['Bandit',44,[['Stab',1,12,1200],['Pocket Sand',1,6,1100,'sp']]]],
+ b:['Treant Elder',240,[['Root Slam',1,22,1000],['Thorn Barrage',4,6,700],['Spore Cloud',1,8,1100,'all psn'],['Photosynthesis',1,8,1000,'heal',.05]]]},
+{n:'Sunken Crypt',e:[['Skeleton',48,[['Bone Chop',1,13,1200]]],['Ghost',40,[['Wail',1,8,1000,'sp']]],['Bone Archer',42,[['Twin Shot',2,8,1000]]]],
+ b:['Lich Queen',270,[['Death Bolt',1,34,750],['Bone Rain',5,6,620],['Soul Siphon',1,10,1000,'all sp']]]},
+{n:'Scorched Wastes',e:[['Scorpion',50,[['Sting',1,9,1100,'psn']]],['Fire Imp',42,[['Flame Dart',3,6,800]]],['Sand Golem',70,[['Crush',1,26,1500]]]],
+ b:['Sun Tyrant',300,[['Solar Flare',1,15,1000,'all'],['Blazing Lance',2,22,850],['Sunbeam',1,16,900,'drain'],['Mirage Rest',1,14,1000,'heal',.06]]]},
+{n:'Frozen Peaks',e:[['Ice Wraith',48,[['Chill Touch',1,12,1000,'psn']]],['Yeti',80,[['Maul',2,14,1100]]],['Frost Archer',45,[['Ice Arrow',1,20,800]]]],
+ b:['Frost Dragon',330,[['Blizzard',1,12,1000,'all psn'],['Tail Whip',1,30,900],['Icicle Hail',6,5,540],['Dragon Bite',1,18,1000,'drain']]]},
+{n:'Abyss Citadel',e:[['Shadow Knight',75,[['Dark Cleave',2,14,1000]]],['Void Mage',55,[['Void Bolt',1,22,800,'sp']]],['Demon',85,[['Hellfire',1,16,1000,'all']]]],
+ b:['Void Sovereign',360,[['Reality Tear',1,16,900,'all sp'],['Oblivion',1,48,650],['Rapid Pulse',8,5,480],['Dark Rebirth',1,18,900,'heal',.09]]]}];
+let G,sel=[],names={},PR=null,logs=[],DM=[],CUR='';
+const SP2={Slime:['Engulf','Gooey tendrils drain 25 SP!'],Wolf:['Pack Howl','The pack howls: every enemy gains +35 MP!'],Bandit:['Smoke Bomb','Smoke turns your timing zones dark and small!'],'Treant Elder':['Overgrowth','Spores poison the party while the Treant PREPARES a heal (the green bar). Break it with damage to stun him!'],Skeleton:['Bone Armor','Bones harden into a protective shield!'],Ghost:['Haunt','A hero is silenced: no skills for a round!'],'Bone Archer':['Mark Prey','A hero is marked: single attacks focus them for 2 rounds!'],'Lich Queen':['Soul Freeze','Your SP freezes: gains cut by 65%!'],Scorpion:['Numbing Venom','A hero is paralysed and loses their next turn!'],'Fire Imp':['Cinder Burst','Embers scorch the whole party for unavoidable damage!'],'Sand Golem':['Sandstorm','Timing zones drift while you strike!'],'Sun Tyrant':['Eclipse','Darkness falls: enemy damage +40% and your zones fade!'],'Ice Wraith':['Frost Nova','Boosts and invisibility are dispelled, and 15 SP freezes away!'],Yeti:['Frenzied Roar','Enemy attacks come faster!'],'Frost Archer':['Frozen Arrow','A hero is chilled: their attacks deal half damage for a round!'],'Frost Dragon':['Glacial Rush','Heavy ice armor and faster attacks!'],'Shadow Knight':['Dark Pact','The knight bleeds 15% HP to raise enemy damage +40%!'],'Void Mage':['Null Field','Every hero is silenced for the coming round!'],Demon:['Blood Pact','Drains 12% of every hero’s HP and heals the Demon!'],'Void Sovereign':['Reality Collapse','Zones warp, a hero is stunned, and all buffs are erased!']};
+let chipIdx=-1;function clr(){DM=[];chipIdx=-1}
+const BQ={'Treant Elder':{s:'Oh, little travelers... I have no wish to hurt you. But I cannot let you trample my forest.',m:['Forgive me, this may sting.','The roots will be gentle... mostly.','Please, do stay down, dear.'],l:'Oh my... you are stronger than you look. Please, I do not wish to fall.',d:'Well fought, children... let the forest grow in peace... thank you.'},
+'Lich Queen':{s:'Mortals in my crypt. How tiresome. Kneel, and I may let you serve me in death.',m:['Your souls will adorn my crown!','Feel the chill of the grave!','Bow before the Queen of Bones!'],l:'Impossible... my bones, my kingdom... I will not return to dust!',d:'Death... is only a door... I shall return...'},
+'Sun Tyrant':{s:'You dare enter my realm? I am the Sun itself! Burn in my glory!',m:['Behold true radiance!','The sun does not forgive!','Wither beneath my light!'],l:'You... dim my light? Impossible! I will scorch this land to ash first!',d:'The sun... sets... but it always... rises...'},
+'Frost Dragon':{s:'Ages have I slept upon these peaks. Insects. You will be buried and forgotten.',m:['Winter claims all!','Freeze in my breath!','Fall like the snow!'],l:'Hrrk... you wound me, little warm-bloods. My frost will not break!',d:'The winter ends... spring... was always... inevitable...'},
+'Void Sovereign':{s:'Ha! Four legends fell before you and you think you are different? I am inevitability. Do try to entertain me.',m:['Is that all you can dodge? Pathetic!','Behold! A god at play!','Kneel, little heroes. It will be over quickly!','I am barely trying!'],l:'...Lucky. A lucky streak, nothing more! I am a god! I do not bleed!',d:'No... I was the end of all things... how could mere mortals...'}};
+function yell(e,k){const Q=BQ[e.bn][k],t=Array.isArray(Q)?pk(Q):Q;sfx('boss');logs.push(`##<div class="bs"><b>${e.nm}:</b> “${t}”</div>`);show()}
+function flush(){if(!DM.length)return;const html=(DM.map(d=>{const t=d.t.nm;let c,x;if(d.k=='e'){c='ce';x=`⚔ ${d.s} ▸ ${t}: <u>${d.n} damage</u>${d.ab?` (+${d.ab} absorbed by shield)`:''}`}else if(d.k=='h'){c='cg';x=`✚ ${d.s} ▸ ${t}: <u>+${d.n} HP</u>`}else if(d.n==0){c='cg';x=`🛡 ${t} PARRIED ${d.s}: <u>0 damage</u>`}else{c=d.r=='orange'?'cb':'cp';x=`${d.r=='orange'?'🛡 BLOCKED · ':'💥 '}${d.s} ▸ ${t}: <u>${d.n} damage</u>`}return `<span class="chip ${c}">${x}</span>`}).join(''));if(chipIdx<0){logs.push('');chipIdx=logs.length-1}logs[chipIdx]='@@<div class="chips">'+html+'</div>';show()}
+function dmgP(x,d){x.hp=Math.max(0,x.hp-d);DM.push({s:CUR,t:x,n:d,k:'p',r:'miss'});if(x.hp<=0)say(`${x.nm} has fallen for good!`);return d}
+const TY={drift:['Warp Field','Timing zones drift while you strike!'],chill:['Mana Frost','Your SP freezes: gains cut by 65%!'],fog:['Dim Veil','Mist turns your timing zones dark green and shrinks them!'],rage:['Warcry','Enemy damage +40%!'],haste:['Quickening','Enemy attacks come faster!']},BS=['fog','chill','rage','haste','drift'],TYS=['drift','chill','fog','rage','haste'];
+// ---------- area backgrounds (inline SVG scenes) ----------
+const SV=b=>`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 600' preserveAspectRatio='xMidYMax slice'>${b}</svg>`,
+GR=(a,b)=>`<defs><linearGradient id='g' x1='0' y1='0' x2='0' y2='1'><stop offset='0' stop-color='${a}'/><stop offset='1' stop-color='${b}'/></linearGradient></defs><rect width='800' height='600' fill='url(#g)'/>`,
+RP=(n,f)=>Array.from({length:n},(_,i)=>f(i)).join(''),
+TR=(x,w,h,c)=>`<path d='M${x} 600l${w/2} ${-h}l${w/2} ${h}z' fill='${c}'/>`;
+const BGS=[
+SV(GR('#07202a','#1f4d2e')+`<defs><radialGradient id='m'><stop offset='0' stop-color='#d9f7c4' stop-opacity='.5'/><stop offset='1' stop-color='#d9f7c4' stop-opacity='0'/></radialGradient></defs><circle cx='620' cy='100' r='150' fill='url(#m)'/><circle cx='620' cy='100' r='44' fill='#e6fbd2'/>`+RP(12,i=>TR(i*70-30,110,230+(i*53%80),'#123f29'))+`<rect y='360' width='800' height='110' fill='#8fe0a8' opacity='.07'/>`+RP(11,i=>TR(i*78-10,120,170+(i*41%90),'#0b2616'))+`<rect y='440' width='800' height='90' fill='#8fe0a8' opacity='.09'/>`+RP(4,i=>`<rect x='${30+i*220}' width='${28+i%2*16}' height='600' fill='#04130b'/><path d='M${30+i*220} 330q-50 -30 -70 -80M${58+i*220} 250q50 -30 80 -90' stroke='#04130b' stroke-width='8' fill='none'/>`)+RP(16,i=>`<circle cx='${(i*97)%800}' cy='${300+(i*61)%250}' r='3' fill='#e8ff8a' opacity='.8'/>`)+RP(6,i=>`<g transform='translate(${60+i*130} ${560+(i%2)*12})'><rect x='-2' y='-14' width='4' height='14' fill='#cfe9d0'/><ellipse cy='-14' rx='11' ry='7' fill='#ff7a8a' opacity='.8'/></g>`)+`<path d='M0 600V552q200-28 400 0t400-12V600z' fill='#03100a'/>`),
+SV(GR('#080b16','#1b2230')+RP(5,i=>`<path d='M${i*180-40} 600V330a70 70 0 0 1 140 0V600z' fill='#06080f'/><path d='M${i*180-12} 600V335a42 42 0 0 1 84 0V600z' fill='#2c7a64' opacity='.18'/>`)+RP(6,i=>`<path d='M${60+i*140} 0v${90+i%3*40}' stroke='#3a4558' stroke-width='3' stroke-dasharray='7 4'/>`)+RP(4,i=>`<circle cx='${110+i*190}' cy='300' r='34' fill='#5fe0b0' opacity='.14'/><rect x='${106+i*190}' y='300' width='8' height='26' fill='#20283a'/><path d='M${110+i*190} 272q-10 16 0 28q10 -12 0 -28z' fill='#8dffd6'/>`)+`<rect y='520' width='800' height='80' fill='#0f2a30'/>`+RP(7,i=>`<rect x='${(i*127)%700}' y='${535+i*7}' width='${90+i%3*40}' height='2' fill='#5fe0b0' opacity='.25'/>`)+`<ellipse cx='400' cy='520' rx='520' ry='50' fill='#5fe0b0' opacity='.1'/><rect y='580' width='800' height='20' fill='#04060b'/>`),
+SV(GR('#3a1420','#e07a32')+`<defs><radialGradient id='s'><stop offset='0' stop-color='#ffd277' stop-opacity='.55'/><stop offset='1' stop-color='#ffd277' stop-opacity='0'/></radialGradient></defs><circle cx='400' cy='360' r='260' fill='url(#s)'/><circle cx='400' cy='360' r='95' fill='#ffd277'/><path d='M0 430v-50h110l20-24h90l16 24h60v50zM540 430v-70h80l18-26h70l14 26h98v70z' fill='#5a1f20'/><path d='M0 600V470q120-60 240-10t240-20 320 20V600z' fill='#7a2e1c'/>`+RP(4,i=>`<path d='M${100+i*200} ${120+i*20}l14 8l14 -8' stroke='#1a0a08' stroke-width='3' fill='none'/>`)+`<path d='M0 600V520q160-50 320-5t480-10V600z' fill='#3d140e'/>`+RP(3,i=>`<g fill='#1a0a08'><rect x='${120+i*260}' y='470' width='16' height='90'/><rect x='${100+i*260}' y='490' width='16' height='38'/><rect x='${140+i*260}' y='480' width='16' height='34'/></g>`)+RP(9,i=>`<path d='M${(i*113)%780} ${560+(i*17)%30}l60 ${i%2?-3:3}' stroke='#1a0a08' stroke-width='2' opacity='.6'/>`)+`<rect y='500' width='800' height='40' fill='#ffb066' opacity='.08'/>`),
+SV(GR('#040a1c','#17375e')+RP(40,i=>`<circle cx='${(i*131)%800}' cy='${(i*53)%260}' r='1.6' fill='#fff' opacity='.8'/>`)+`<circle cx='140' cy='110' r='30' fill='#dfeaff' opacity='.85'/><path d='M0 200q200-80 400-10t400-30v60q-200 60-400 0T0 260z' fill='#4dffb0' opacity='.18'/>`+RP(7,i=>TR(i*130-50,240,200+(i*43%70),'#1d3558'))+RP(6,i=>{const h=300+(i*57%90),px=i*150+70;return TR(i*150-60,260,h,'#2c4d78')+`<path d='M${px-34} ${600-h+52}L${px} ${600-h}L${px+34} ${600-h+52}z' fill='#eaf6ff'/>`})+RP(8,i=>TR(i*110-40,130,120+(i*37%50),'#0a1628'))+`<path d='M0 600V552q200-24 400 0t400-10V600z' fill='#a9c4e8'/>`+RP(60,i=>`<circle cx='${(i*89)%800}' cy='${(i*47)%600}' r='1.4' fill='#fff' opacity='.55'/>`)),
+SV(GR('#0c0516','#2b0a2c')+RP(30,i=>`<circle cx='${(i*137)%800}' cy='${(i*41)%300}' r='1.3' fill='#e9d6ff' opacity='.6'/>`)+`<path d='M560 240L400 600h320z' fill='#9b4dff' opacity='.07'/><circle cx='560' cy='170' r='72' fill='#8a1226'/><ellipse cx='560' cy='170' rx='140' ry='34' fill='none' stroke='#9b4dff' stroke-width='3' opacity='.5'/><ellipse cx='560' cy='170' rx='200' ry='52' fill='none' stroke='#9b4dff' stroke-width='2' opacity='.3'/>`+RP(3,i=>`<path d='M${90+i*270} ${230+i*40}l30 -14l34 10l-10 26l-40 6z' fill='#0a0512'/>`)+RP(7,i=>{const x=i*120-20,h=260+(i*71%140);return `<rect x='${x}' y='${600-h}' width='70' height='${h}' fill='#05030a'/><path d='M${x-6} ${600-h}l41 -80l41 80z' fill='#05030a'/><rect x='${x+28}' y='${600-h+50}' width='10' height='16' fill='#ff5a3c' opacity='.8'/>`})+`<rect y='560' width='800' height='40' fill='#020106'/><path d='M0 580q100-10 200 0t200 0 200 0 200 0' stroke='#ff5a3c' stroke-width='3' fill='none' opacity='.8'/><rect y='540' width='800' height='30' fill='#ff4a1a' opacity='.12'/>`+RP(18,i=>`<circle cx='${(i*71)%800}' cy='${380+(i*53)%200}' r='2' fill='#ff9a2e' opacity='.7'/>`))];
+function setBg(a){if(setBg.c===a)return;setBg.c=a;$('#bg').style.backgroundImage=`linear-gradient(rgba(0,0,0,.45),rgba(0,0,0,.45)),url("data:image/svg+xml,${encodeURIComponent(BGS[a])}")`}
+// ---------- audio (all synthesized, no files) ----------
+const AU={ctx:null,mus:true,sfx:true,mode:null,cur:null,step:0,next:0,timer:null};
+try{const s=JSON.parse(localStorage.getItem('tl_audio')||'{}');if(s.mus===false)AU.mus=false;if(s.sfx===false)AU.sfx=false}catch(e){}
+function asave(){try{localStorage.setItem('tl_audio',JSON.stringify({mus:AU.mus,sfx:AU.sfx}))}catch(e){}}
+function actx(){if(!AU.ctx){const C=window.AudioContext||window.webkitAudioContext;if(!C)return null;AU.ctx=new C()}if(AU.ctx.state=='suspended')AU.ctx.resume();return AU.ctx}
+function tone(f,d,ty='square',v=.15,t0=0,f2=null){const c=AU.ctx,t=c.currentTime+t0,o=c.createOscillator(),g=c.createGain();o.type=ty;o.frequency.setValueAtTime(f,t);if(f2)o.frequency.exponentialRampToValueAtTime(f2,t+d);g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(.001,t+d);o.connect(g);g.connect(c.destination);o.start(t);o.stop(t+d+.02)}
+function noise(d,v=.2,t0=0,hp=800){const c=AU.ctx,n=Math.floor(c.sampleRate*d),b=c.createBuffer(1,n,c.sampleRate),a=b.getChannelData(0);for(let i=0;i<n;i++)a[i]=Math.random()*2-1;const s=c.createBufferSource(),g=c.createGain(),f=c.createBiquadFilter(),t=c.currentTime+t0;s.buffer=b;f.type='highpass';f.frequency.value=hp;g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(.001,t+d);s.connect(f);f.connect(g);g.connect(c.destination);s.start(t)}
+function csfx(c){if(!AU.sfx||!actx())return;const T=tone,N=noise,P={
+Warrior:()=>{N(.12,.35,0,1500);T(220,.5,'square',.1,0,200);T(330,.6,'triangle',.1,0,300);T(90,.3,'sawtooth',.2,0,45);N(.1,.25,.18,2500);T(247,.45,'square',.07,.18,230)},
+Mage:()=>{[523,659,784,1047,1319,1568].forEach((f,i)=>T(f,.3,'triangle',.1,i*.07,f*1.02));N(.5,.08,.1,6000);T(2093,.5,'sine',.07,.4)},
+Cleric:()=>{[523,659,784].forEach(f=>T(f,.9,'sine',.1,0));[1047,1319].forEach(f=>T(f,.7,'sine',.05,.25));T(1568,.6,'triangle',.08,.15)},
+Rogue:()=>{N(.14,.22,0,4000);T(900,.12,'sawtooth',.05,0,2400);T(1318,.07,'square',.07,.2);T(1760,.07,'square',.07,.26);T(2349,.14,'square',.07,.32)},
+Huntress:()=>{T(240,.35,'triangle',.18,0,170);T(480,.3,'sine',.07,0,340);N(.28,.15,.08,2500);T(130,.1,'square',.14,.36,60);N(.05,.2,.36,1200)},
+Duelist:()=>{N(.3,.14,0,6000);T(1100,.3,'sawtooth',.05,0,3200);T(2093,.5,'sine',.1,.28);T(3136,.4,'sine',.05,.3);N(.06,.2,.3,5000)},
+Warlock:()=>{T(330,.9,'sawtooth',.1,0,110);T(110,.9,'sawtooth',.12,0,55);T(117,.9,'sawtooth',.09,0,58);N(.6,.09,.1,300);T(70,.5,'sine',.2,.4,40)},
+Berserker:()=>{N(.45,.3,0,200);T(95,.55,'sawtooth',.2,0,60);T(140,.45,'square',.09,0,70);T(210,.3,'sawtooth',.07,.1,120);N(.12,.35,.3,500);T(60,.2,'square',.2,.3,35)},
+Valkyrie:()=>{T(392,.16,'square',.09,0);T(523,.16,'square',.09,.14);T(659,.5,'square',.09,.28);T(784,.5,'triangle',.08,.28);T(1047,.6,'triangle',.06,.45);N(.35,.1,.25,3500)}};(P[c]||(()=>{}))()}
+function sfx(k){if(!AU.sfx||!actx())return;const S={
+click:()=>tone(660,.06,'square',.08),
+crit:()=>{tone(880,.1,'square',.15);tone(1320,.2,'square',.15,.08);noise(.15,.2,0,2000)},
+hit:()=>{noise(.12,.25,0,600);tone(200,.1,'sawtooth',.12,0,90)},
+weak:()=>tone(220,.15,'triangle',.12,0,120),
+parry:()=>{tone(1400,.08,'triangle',.18);tone(1900,.18,'sine',.15,.05)},
+block:()=>{tone(300,.1,'square',.15,0,200);noise(.06,.15,0,1500)},
+hurt:()=>{noise(.2,.3,0,300);tone(140,.25,'sawtooth',.18,0,50)},
+boss:()=>{tone(90,.45,'sawtooth',.2,0,55);tone(135,.4,'square',.07,0,80)},
+warn:()=>{tone(520,.07,'square',.08);tone(520,.07,'square',.08,.1)},
+cast:()=>[0,1,2,3].forEach(i=>tone(300+i*120,.2,'sine',.12,i*.08,500+i*160)),
+heal:()=>[523,659,784].forEach((f,i)=>tone(f,.18,'sine',.14,i*.09)),
+kill:()=>{tone(400,.25,'square',.12,0,80);noise(.2,.15,0,500)},
+win:()=>[523,659,784,1047].forEach((f,i)=>tone(f,.25,'square',.12,i*.12)),
+lose:()=>[392,330,262,196].forEach((f,i)=>tone(f,.4,'triangle',.18,i*.25))};
+try{S[k]()}catch(e){}}
+const MP={battle:{bpm:140,ch:[[220,261.6,329.6],[174.6,220,261.6],[196,246.9,293.7],[164.8,196,246.9]],lead:'x.x.xx.xx.x.x.xx'},boss:{bpm:158,ch:[[207.7,246.9,311.1],[196,233.1,293.7],[174.6,207.7,261.6],[185,220,277.2]],lead:'xxxxxx.xxxxx.xxx'}};
+const F=n=>110*Math.pow(2,n/12),T=(bpm,ch,lead,lw,bw,lo,hat,bs,ar)=>({bpm,ch,lead,lw,bw,lo,hat,bs,ar});
+// a0-a4: area themes (forest, crypt, wastes, peaks, abyss). b0-b4: boss themes
+const MT={
+a0:T(108,[[3,7,10],[-2,2,5],[0,3,7],[-4,0,3]],'x.x.xx..x.x.xx..','triangle','triangle',2,0,'x.......x.......','0121'),
+a1:T(80,[[-7,-4,0],[1,5,8],[-2,1,5],[0,4,7]],'x.....x.....x...','sine','triangle',2,0,'x.......x.....x.','0212'),
+a2:T(124,[[7,10,14],[8,12,15],[7,10,14],[5,8,12]],'x.xxx.xxx.xxx.x.','sawtooth','square',2,1,'x..x..x.x..x..x.','0120'),
+a3:T(92,[[3,7,10],[-2,2,5],[0,3,7],[-5,-2,2]],'x...x...x.x.x...','sine','sine',4,0,'x.......x.......','0210'),
+a4:T(100,[[3,6,10],[1,4,8],[-2,1,5],[-4,-1,3]],'x..x..x...x..x..','sawtooth','sawtooth',1,1,'x.x...x.x.x...x.','0120'),
+b0:T(132,[[0,3,7],[-2,2,5],[-4,0,3],[-5,-1,2]],'xx.xx.xxxx.xx.x.','square','triangle',2,2,'x..xx..xx..xx.x.','0120'),
+b1:T(116,[[-7,-4,-1],[-5,-2,1],[-7,-4,0],[0,4,7]],'x.x.x.xx.x.x.xx.','sawtooth','square',2,1,'x.x.x.x.x.x.x.x.','0121'),
+b2:T(152,[[7,11,14],[8,12,15],[10,14,17],[7,11,14]],'xxxxxxx.xxxxxx.x','sawtooth','sawtooth',2,2,'x.x.x.x.x.x.x.x.','0120'),
+b3:T(140,[[0,3,7],[-4,0,3],[-2,2,5],[-5,-1,2]],'x.xxx.xx.xxx.xxx','sine','triangle',4,2,'x...x...x...x...','0121'),
+b4:T(170,[[3,6,10],[0,3,7],[-2,1,5],[-5,-2,1]],'xxx.xxx.xxxxx.xx','sawtooth','square',2,2,'xx.xx.xxxx.xx.xx','0201')};
+function mstep(){const c=AU.ctx,P=MT[AU.mode];if(!c||!P||!AU.mus)return;const sd=60/P.bpm/4;while(AU.next<c.currentTime+.35){const s=AU.step%16,ch=P.ch[(AU.step>>4)%4],t=Math.max(0,AU.next-c.currentTime);const f0=F(ch[0]),ln=P.lw=='sine'||P.lw=='triangle',bl=P.bw=='triangle'||P.bw=='sine';if(P.bs[s]=='x')tone(f0,sd*3,P.bw,bl?.22:.1,t);if(P.lead[s]=='x')tone(F(ch[+P.ar[s%P.ar.length]])*P.lo,sd*.9,P.lw,ln?.09:.04,t);if(P.hat==2||(P.hat==1&&s%2==1))noise(.03,.04,t,6000);if(P.hat&&s%8==4)noise(.1,.08,t,1200);AU.next+=sd;AU.step++}}
+function mus(m){AU.mode=m;if(!AU.mus||!actx())return;if(AU.timer&&AU.cur==m)return;AU.cur=m;AU.step=0;AU.next=AU.ctx.currentTime+.05;clearInterval(AU.timer);AU.timer=setInterval(mstep,100)}
+function auiu(){$('#bm').textContent='♪ Music: '+(AU.mus?'ON':'OFF');$('#bs').textContent='🔊 SFX: '+(AU.sfx?'ON':'OFF')}
+$('#bm').onclick=()=>{AU.mus=!AU.mus;asave();auiu();if(AU.mus){actx();if(AU.mode)mus(AU.mode)}else{clearInterval(AU.timer);AU.timer=null;AU.cur=null}};
+$('#bs').onclick=()=>{AU.sfx=!AU.sfx;asave();auiu();sfx('click')};auiu();
+// ---------- setup ----------
+function setup(){
+ $('#grid').innerHTML=Object.keys(CL).map(c=>{const k=CL[c],i=sel.indexOf(c);return `<div class="card cls ${i>=0?'sel':''}" data-c="${c}" tabindex="0" role="button" style="${tile(H[c])}"><div class="ih">${ico(c,56)}<b style="color:${tx(H[c])}">${c}</b></div>${i>=0?`<span class="badge">#${i+1}</span>`:''}<small>HP ${k.hp} · ATK ${k.atk}</small><small>${k.sk} (${k.c} SP): ${k.d}</small><small style="color:var(--ye)">Passive · ${k.ps}</small></div>`}).join('');
+ document.querySelectorAll('.cls').forEach(el=>{const f=()=>{const c=el.dataset.c,i=sel.indexOf(c);if(i>=0)sel.splice(i,1);else if(sel.length<3){sel.push(c);csfx(c)}setup()};el.onclick=f;el.onkeydown=e=>{if(e.key=='Enter'||e.key==' '){e.preventDefault();f()}}});
+ $('#names').innerHTML=sel.map(c=>`<label>${ico(c,28)} ${c}<input maxlength="12" data-c="${c}" value="${names[c]||DN[Object.keys(CL).indexOf(c)]}"></label>`).join('');
+ document.querySelectorAll('#names input').forEach(el=>el.oninput=()=>names[el.dataset.c]=el.value);
+ $('#begin').disabled=sel.length<3;$('#begin').textContent=sel.length<3?`Pick ${3-sel.length} more`:'Begin adventure';
+}
+$('#begin').onclick=()=>{actx();sfx('click');
+ G={p:sel.map(c=>{const d=DN[Object.keys(CL).indexOf(c)],k=CL[c];return{cls:c,h:H[c],nm:((names[c]||d).replace(/[<>&"]/g,'').trim())||d,mh:k.hp,hp:k.hp,atk:k.atk,psn:0}}),a:0,f:0,sp:10,buff:0,en:[],ds:1,fx:{drift:0,chill:0,fog:0,rage:0,haste:0}};
+ $('#setup').style.display='none';$('#game').style.display='block';run();
+};
+// ---------- ui ----------
+function col(t){const L=[...G.p,...G.en].sort((a,b)=>b.nm.length-a.nm.length);return L.reduce((s,x)=>s.replace(new RegExp('(?<![\\w])'+esc(x.nm)+'(?![\\w])','gi'),m=>`<span style="color:${tx(x.h)};font-weight:bold">${m}</span>`),t)}
+function show(){const m=$('#msg');m.innerHTML=logs.slice(-9).map(l=>l.startsWith('##')?l.slice(2):col(l.startsWith('@@')?l.slice(2):`<div>${l}</div>`)).join('');m.scrollTop=m.scrollHeight}
+function say(t){logs.push(t);show()}
+function render(){
+ $('#area').textContent=`${AR[G.a].n} · Fight ${G.f+1}/5${G.f==4?' · BOSS':''}`;
+ $('#spl').textContent=`SP ${G.sp}/100${G.fx.chill>0?' ❄ FROZEN':''}`;$('#sp').classList.toggle('cold',G.fx.chill>0);
+ const F=G.fx,T=(c,t)=>`<span class="tag" style="color:${c}">${t}</span>`;
+ $('#bst').innerHTML=(G.prot?T('#7fc4ff','✚ VALKYRIE PROTECTS: -20% damage this round'):'')+(G.buff>0?T('var(--ye)',`⬆ BOOST +50%: next ${G.buff} attack${G.buff>1?'s':''}`):'')+(F.drift>0?T('#ff8fd0',`🌀 ZONES DRIFTING (${F.drift})`):'')+(F.fog>0?T('#b0b0c8',`🌫 ZONES MISTED (${F.fog})`):'')+(F.chill>0?T('#58a6ff',`❄ SP FROZEN (${F.chill} rds)`):'')+(F.rage>0?T('var(--rd)',`🔥 ENEMIES ENRAGED (${F.rage} rds)`):'')+(F.haste>0?T('#ffb347',`💨 ENEMIES HASTED (${F.haste} rds)`):'');$('#sp i').style.width=G.sp+'%';
+ $('#en').innerHTML=G.en.map(e=>`<div class="card e ${e.boss?'boss':''} ${e.hp<=0?'dead':''}" style="${tile(e.h)}"><div class="ih">${ico(e.bn,e.boss?64:44)}<b style="color:${tx(e.h)}">${e.nm}</b></div><div class="hp"><i style="width:${e.hp/e.mh*100}%"></i>${e.hl>0?`<b class="pend" style="left:${e.hp/e.mh*100}%;width:${Math.min(e.hl,e.mh-e.hp)/e.mh*100}%"></b>`:''}<span>♥ HP ${e.hp}/${e.mh}${e.hl>0?` · +${e.hl} HEAL PENDING`:''}${e.stn>0?' · 💫 STUNNED':''}</span></div><div class="hp mp${e.mp>=e.mx?' rdy':''}"><i style="width:${e.mp/e.mx*100}%"></i><span>✦ MAGIC ${e.mp}/${e.mx}${e.mp>=e.mx?(e.burn>0?' · SEALED':' · READY!'):''}</span></div>${e.psn>0?' ☠ POISONED':''}${e.sh>0?' 🛡 SHIELD '+e.sh:''}${e.stl?' 🗝 TURN STOLEN':''}${e.burn>0?' 🔥BURN '+e.burn:''}<div class="mu" style="font-size:12px">✦ ${SP2[e.bn][0]}</div></div>`).join('');
+ $('#pt').innerHTML=G.p.map(u=>`<div class="card m ${u.hp<=0?'dead':''} ${u.tg?'targeted':''} ${u.act?'act':''} ${u.inv>0?'inv':''}" style="${tile(u.h)}"><b style="color:${tx(u.h)}"><span class="ic">${ico(u.cls,28)}</span> ${u.nm}</b> <span class="mu">Lv${u.lv||1} ${u.tt||u.cls}</span><div class="hp"><i style="width:${u.hp/u.mh*100}%"></i><span>♥ HP ${u.hp}/${u.mh}</span></div>${u.hp>0?`<div>${u.psn>0?`<span class="tag" style="color:#9be15d">☠ POISON ${u.psn}</span>`:''}${u.guard?'<span class="tag" style="color:#7fc4ff">🛡 GUARD</span>':''}${u.taunt?'<span class="tag" style="color:#ffb347">📣 TAUNT</span>':''}${u.rip?'<span class="tag" style="color:#ff8fd0">⚡ RIPOSTE</span>':''}${u.wt?'<span class="tag" style="color:#ffb347">📣 WEAK TAUNT</span>':''}${u.weak>0?'<span class="tag" style="color:var(--rd);background:#3a0a14">⚠ WEAKENED: NO DEFENSE</span>':''}${u.exh?`<span class="tag" style="color:#ffb86b">😮‍💨 EXHAUSTED: no turn stealing</span>`:''}${u.inv>0?`<span class="tag" style="color:#c9a0ff;background:#2a1450">👻 INVISIBLE +20% DMG (${u.inv})</span>`:''}${u.sil>0?'<span class="tag" style="color:#b0b0ff">🤐 SILENCED</span>':''}${u.mark>0?'<span class="tag" style="color:#ff6a6a">🎯 MARKED</span>':''}${u.stun>0?'<span class="tag" style="color:#ffe14d">💫 PARALYSED</span>':''}${u.wk>0?'<span class="tag" style="color:#8fd0ff">❄ CHILLED: -50% DMG</span>':''}${u.dbl?'<span class="tag" style="color:#7fffd4">🗝 PARRY RANGE ×2</span>':''}${G.buff>0?'<span class="tag" style="color:var(--ye)">⬆ BOOST</span>':''}</div>`:''}</div>`).join('');
+}
+function menu(opts){$('#tw').style.display='none';return new Promise(r=>{const m=$('#menu');m.innerHTML='';opts.forEach(o=>{const b=document.createElement('button');b.textContent=o.l;b.style.whiteSpace='pre-line';b.style.textAlign='left';b.disabled=!!o.dis;b.onclick=()=>{sfx('click');m.innerHTML='';r(o.id)};m.appendChild(b)})})}
+async function pick(list){const r=await menu(list.map((x,i)=>({id:i,l:`${x.nm} (${x.hp}/${x.mh})`})).concat([{id:'b',l:'← Back'}]));return r==='b'?null:list[r]}
+const AL={green:['CRITICAL!','var(--gr)'],orange:['HIT','var(--or)'],miss:['WEAK','var(--rd)']},DL={green:['PARRY!','var(--gr)'],orange:['BLOCK','var(--or)'],miss:['HIT!','var(--rd)']};
+addEventListener('keydown',e=>{if(PR&&(e.code=='Space'||e.code=='Enter')){e.preventDefault();PR(e.timeStamp)}});
+$('#go').onpointerdown=e=>{e.preventDefault();PR&&PR(e.timeStamp)};
+function tm(dur,wide,L,gm=1,om=1){return new Promise(async res=>{
+ const D=L===DL,fg=L===AL&&G.fx.fog>0,fm=fg?.6:1,b=Math.min(9,4+(1300-dur)/220),g=b*(D?(wide?.45:.3):1)*gm*fm,o=Math.max(b*1.65*om*(D?(wide?.8:.65):1)*fm,g*1.65),c=rnd(58,84);
+ $('#tw').style.display='block';$('#res').textContent='';$('#go').textContent=L===AL?'STRIKE!':'PARRY!';
+ const O=$('.z.o'),Z=$('.z.g'),cur=$('#cur'),dr=L===AL&&G.fx.drift>0;let cc=c;if(L===AL){if(G.fx.drift>0)G.fx.drift--;if(G.fx.fog>0)G.fx.fog--}O.style.background=Z.style.background=fg?'#0e3d20':'';
+ O.style.left=(c-o)+'%';O.style.width=2*o+'%';Z.style.left=(c-g)+'%';Z.style.width=2*g+'%';cur.style.left='0%';
+ await sleep(350);const t0=performance.now();let pos=0,done=false;
+ const fin=r=>{if(done)return;done=true;PR=null;sfx(L===AL?{green:'crit',orange:'hit',miss:'weak'}[r]:{green:'parry',orange:'block',miss:'hurt'}[r]);$('#res').innerHTML=`<span style="color:${L[r][1]}">${L[r][0]}</span>`;setTimeout(()=>res(r),450)};
+ PR=ts=>{const t=(ts>t0&&ts<=performance.now()+2)?ts:performance.now();if(t-t0>=dur)return fin('miss');pos=(t-t0)/dur*100;if(dr)cc=c+15*Math.sin(pos*.1);fin(Math.abs(pos-cc)<=g?'green':Math.abs(pos-cc)<=o?'orange':'miss')};
+ const f=n=>{if(done)return;pos=(n-t0)/dur*100;if(dr){cc=c+15*Math.sin(pos*.1);O.style.left=(cc-o)+'%';Z.style.left=(cc-g)+'%'}cur.style.left=Math.min(pos,100)+'%';if(pos>=100)fin('miss');else requestAnimationFrame(f)};requestAnimationFrame(f);
+})}
+// ---------- combat ----------
+const alive=a=>a.filter(x=>x.hp>0);
+function brk(e){e.hl=0;e.stn=1;say(`💥 The heal is broken! ${e.nm} is stunned and loses his next turn!`);G.p.forEach(x=>{if(x.hp>0){const h=Math.min(x.mh-x.hp,Math.round(e.hlm*.4));x.hp+=h;if(h>0)DM.push({s:e.nm,t:x,n:h,k:'h'});x.psn=0;x.pd=0}});say('🍃 Stray healing spores mend the party and cure all poison!')}
+function hurt(e,n){let ab=0;if(e.sh>0){ab=Math.min(e.sh,Math.round(n));e.sh-=ab;n-=ab}if(e.hl>0&&n>0){const t=Math.min(e.hl,Math.round(n));e.hl-=t;n-=t;ab+=t;if(e.hl<=0)brk(e)}const b4=e.hp,ov=Math.max(0,Math.round(n-e.hp));e.hp=Math.max(0,Math.round(e.hp-n));if(b4>0&&e.hp<=0&&G.en.includes(e)){const w=G.p.find(y=>y.cls=='Warlock'&&y.hp>0);if(w){const hh=Math.min(12,w.mh-w.hp);w.hp+=hh;if(hh>0)DM.push({s:w.nm,t:w,n:hh,k:'h'})}}DM.push({s:CUR,t:e,n:b4-e.hp,k:'e',ab});if(e.boss){if(e.hp<=0)yell(e,'d');else if(!e.lowSaid&&e.hp<=e.mh*.35){e.lowSaid=1;yell(e,'l')}}if(e.hp<=0){sfx('kill');say(`${e.nm} is defeated!`)}return ov}
+function recoil(u,ov){if(ov<=0)return;u.hp=Math.max(0,u.hp-ov);say(`🪓 ${u.nm} takes ${ov} overkill recoil!`);if(u.hp<=0)say(`${u.nm} has fallen for good!`)}
+async function act(u){
+ const k=CL[u.cls];CUR=u.nm;u.act=true;if(u.weak>0)say(`⚠ ${u.nm} is WEAKENED: no Riposte, and all damage next enemy phase is full (no parry or block)!`);render();
+ while(true){
+  const ch=await menu([{id:'a',l:G.buff>0?'⚔ Attack ⬆ BOOSTED':'⚔ Attack'},{id:'s',l:`✦ ${k.sk} (${CC(u)} SP)${G.buff>0&&u.cls!='Cleric'&&u.cls!='Warrior'&&u.cls!='Valkyrie'?' ⬆':''}${u.cls=='Duelist'&&u.weak>0?' ✖ WEAKENED':''}${u.sil>0?' ✖ SILENCED':''}`,dis:G.sp<CC(u)||(u.cls=='Duelist'&&u.weak>0)||u.sil>0},{id:'g',l:'🛡 Guard (+15 SP)'}]);
+  if(ch=='g'){u.guard=true;gsp(15);say(`${u.nm} guards: 50% less damage, plus a wider parry window against single-target attacks.`);break}
+  const kind=ch=='a'?'enemy':k.t;let tg=null;
+  if(kind=='enemy'){tg=await pick(alive(G.en));if(!tg)continue}
+  if(kind=='ally'){tg=await pick(alive(G.p));if(!tg)continue}
+  if(ch=='s')G.sp-=CC(u);
+  CUR=u.nm;clr();say(`${u.nm} ${ch=='a'?'attacks':'uses '+k.sk}!`);render();
+  if(ch=='s'&&u.cls=='Huntress'){let cr=0;for(let i=1;i<=3&&alive(G.en).length;i++){say(`🏹 Arrow ${i}/3!`);const q=await tm(1300,false,AL,.45,1),bb=G.buff>0?1.5:1;if(bb>1)G.buff--;hurt(pk(alive(G.en)),u.atk*[.85,.92,1][LV(u)]*{green:1.5,orange:1,miss:.5}[q]*bb*(u.inv>0?1.2:1)*rnd(.9,1.1));if(q=='green')cr++}if(cr==3){u.inv=2;say(`👻 ${u.nm} vanishes! Invisible for 2 rounds.`)}break}
+  const mend=u.cls=='Cleric'&&ch=='s',nsc=ch=='s'&&(u.cls=='Warrior'||u.cls=='Valkyrie'),r=nsc?'orange':await tm(1300,false,AL,(ch=='a'?.28:mend?.15:.7)*(u.cls=='Mage'?1.2:1),ch=='a'?.8:mend?.75:1),m={green:1.5,orange:1,miss:.5}[r],sup=ch=='s'&&(u.cls=='Cleric'||u.cls=='Warrior'||u.cls=='Valkyrie'),b=G.buff>0&&!sup?1.5:1,dm=(x=1)=>u.atk*x*m*b*(u.inv>0?1.2:1)*(u.wk>0?.5:1)*rnd(.9,1.1);if(b>1){G.buff--;say(`⬆ BOOSTED! +50% damage (${G.buff} boosted attack${G.buff==1?'':'s'} left)`)}
+  
+  if(ch=='a')hurt(tg,dm());
+  else switch(u.cls){
+   case'Warrior':u.taunt=u.guard=true;say(`${u.nm} taunts the enemy!`);break;
+   case'Mage':alive(G.en).forEach(e=>hurt(e,dm([.9,1,1][LV(u)])));if(tg.hp>0){tg.burn=LV(u)>1?4:3;say(`🔥 ${tg.nm}'s magic is burned for ${tg.burn} rounds!`)}break;
+   case'Cleric':if(r=='miss'){const d=Math.min(6,tg.hp-1);tg.hp-=d;say(`The mend backfires! ${tg.nm} takes ${d} damage.`)}else{const h=Math.round((20+LV(u)*5+u.atk*1.5)*m);tg.hp=Math.min(tg.mh,tg.hp+h);sfx('heal');DM.push({s:u.nm,t:tg,n:h,k:'h'});say(`${tg.nm} recovers ${h} HP.${r=='green'&&tg.psn>0?' Poison cleansed!':''}`);if(r=='green')tg.psn=0}break;
+   case'Rogue':{const st=tg.mp,gn=Math.round(st*[.5,.55,.6][LV(u)]*m);hurt(tg,dm(.6));tg.mp=0;u.dbl=true;if(tg.hp>0&&r!='miss'&&!u.exh){tg.stl=u;say(`🗝 ${tg.nm}’s next turn is stolen! ${u.nm}’s parry range is doubled this round.`)}if(u.exh)say(`😮‍💨 ${u.nm} is exhausted and cannot steal the turn!`);u.exh=true;G.sp=Math.min(100,G.sp+gn);say(st>0?`🗝 ${u.nm} steals ${st} MP from ${tg.nm}: +${gn} SP!`:`🗝 ${tg.nm} had no magic to steal.`);break}
+   case'Huntress':for(let i=0;i<3&&alive(G.en).length;i++)hurt(pk(alive(G.en)),dm(.85));break;
+   case'Duelist':hurt(tg,dm([1.2,1.3,1.4][LV(u)]));u.rip=u.wt=true;say(`${u.nm} readies a riposte and baits the weakest enemy!`);break;
+   case'Warlock':{const d=dm([1.7,1.85,2][LV(u)]);hurt(tg,d);const h=Math.round(d);u.hp=Math.min(u.mh,u.hp+h);DM.push({s:u.nm,t:u,n:h,k:'h'});say(`${u.nm} drains ${h} HP.`);break}
+   case'Berserker':{u.hp-=[15,12,12][LV(u)];const ov=hurt(tg,dm([2.5,2.5,2.75][LV(u)]));u.hp=Math.max(1,u.hp-ov);if(ov>0)say(`🪓 ${u.nm} takes ${ov} overkill recoil!`);break}
+   case'Valkyrie':G.buff=[3,4,4][LV(u)];G.prot=true;G.pv=[.8,.8,.75][LV(u)];say(`⬆ BATTLE HYMN! The next ${G.buff} party attacks deal +50% damage, and the party takes ${Math.round((1-G.pv)*100)}% less damage this round.`);break}
+  break;
+ }
+ flush();u.act=false;render();await sleep(1000);
+}
+async function foe(e,a){
+ CUR=e.nm;clr();say(`${e.nm} uses ${a[0]}!`);await sleep(900);const fl=a[4]||'';if(e.boss&&(a[2]>=22||a[1]>=4||fl.includes('all'))&&Math.random()<.75){yell(e,'m');await sleep(1200)}
+
+ for(let h=0;h<a[1];h++){
+  const al=alive(G.p);if(!al.length||e.hp<=0)break;
+  const vis=al.filter(x=>!(x.inv>0));if(!vis.length)break;const tgs=fl.includes('all')?al:[vis.find(x=>x.taunt)||vis.find(x=>x.mark>0)||(e===alive(G.en).reduce((m,y)=>y.hp<m.hp?y:m)&&vis.find(x=>x.wt))||(t=>t.cls=='Huntress'?pk(vis):t)(pk(vis))];
+  tgs.forEach(x=>x.tg=true);sfx('warn');render();say(`${e.nm} targets ${tgs.length>1?'THE WHOLE PARTY':tgs[0].nm.toUpperCase()}!${tgs.some(x=>x.weak>0)?` ⚠ ${tgs.filter(x=>x.weak>0).map(x=>x.nm).join(', ')} WEAKENED: no parry or block!`:''}`);await sleep(h?350:700);
+  const R=tgs.every(x=>x.weak>0)?'miss':await tm(G.fx.haste>0?a[3]*.75:a[3],!fl.includes('all')&&tgs[0].guard&&!(tgs[0].weak>0),DL,ZG(tgs),tgs.length==1&&tgs[0].dbl?2:1);e.mp=Math.min(e.mx,e.mp+{green:2,orange:8,miss:8}[R]);
+  for(const x of tgs){x.exh=false;const r=x.weak>0?'miss':R;
+   const dmg=r=='green'?0:Math.max(1,Math.round(a[2]*1.5*G.ds*(e.boss?1:1.3)*(G.fx.rage>0?1.4:1)*(r=='orange'?.5:1)*(x.guard&&!(x.weak>0)?(x.taunt?[.5,.45,.4][LV(x)]:.5):1)*(G.prot?(G.pv||.8):1)*PM(x,e)));
+   x.hp=Math.max(0,x.hp-dmg);DM.push({s:e.nm,t:x,n:dmg,k:'p',r});gsp({green:5,orange:2,miss:0}[r]);if(r=='green'&&x.cls=='Duelist')gsp(3);if(r=='green'&&x===tgs[0]&&G.p.some(y=>y.cls=='Cleric'&&y.hp>0))gsp(2);if(r!='green'&&x.cls=='Berserker')gsp(3);if(fl.includes('heal')&&x===tgs[0]){if(r=='green')say(`${x.nm} parries the heal!`);else{const hh=Math.round(e.mh*a[5]);e.hp=Math.min(e.mh,e.hp+hh);DM.push({s:e.nm,t:e,n:hh,k:'h'});say(`${e.nm} recovers.`)}}
+   if(x.hp<=0){say(`${x.nm} has fallen for good!`);continue}
+   if(fl.includes('psn')&&r!='green'){x.psn=3}
+   if(fl.includes('sp')&&r=='miss')G.sp=Math.max(0,G.sp-15);
+   if(fl.includes('drain')&&dmg){e.hp=Math.min(e.mh,e.hp+dmg);DM.push({s:e.nm,t:e,n:dmg,k:'h'})}
+   if(x.rip&&r!='miss'){CUR=x.nm;x.rip=false;x.weak=2;if(r=='green'){const c=e.boss?80:e.hp;say(`⚔ PERFECT RIPOSTE! ${x.nm} ${e.boss?'strikes '+e.nm+' for 80':'executes '+e.nm}!`);hurt(e,c)}else{const c=Math.round(x.atk*.9);say(`${x.nm} ripostes for ${c}.`);hurt(e,c)}say(`⚠ ${x.nm} is WEAKENED: no parry, block or Riposte next turn!`)}
+  }
+  tgs.forEach(x=>x.tg=false);flush();render();await sleep(600);
+ }
+}
+function gsp(n){G.sp=Math.min(100,G.sp+Math.round(n*(G.fx.chill>0?.35:1)))}
+async function cast(e){const t=SP2[e.bn],A=alive(G.p),F=G.fx,K=1+.2*G.a;let v=null;const R=()=>v=pk(A);CUR=e.nm;clr();e.mp=0;sfx('cast');say(`✦ ${e.nm} channels ${t[0]}!`);if(e.boss){yell(e,'m');await sleep(900)}render();await sleep(900);
+ switch(e.bn){
+ case'Slime':G.sp=Math.max(0,G.sp-25);break;
+ case'Wolf':G.en.forEach(y=>{if(y.hp>0)y.mp=Math.min(y.mx,y.mp+35)});break;
+ case'Bandit':F.fog=3;break;
+ case'Treant Elder':{const R2=await tm(1000,false,DL,1,1);if(R2=='green')say('🌿 The spores are parried: nobody is poisoned!');else A.forEach(x=>{x.psn=R2=='orange'?2:3;x.pd=7});e.hl=e.hlm=Math.round(e.mh*.12);say('🌿 The Treant is PREPARING to heal! Break the green bar with damage to stun him.');break}
+ case'Skeleton':e.sh=Math.round(35*K);break;
+ case'Ghost':R().sil=2;break;
+ case'Bone Archer':R().mark=2;break;
+ case'Lich Queen':F.chill=4;break;
+ case'Scorpion':R().stun=1;break;
+ case'Fire Imp':A.forEach(x=>dmgP(x,Math.round(10*G.ds*1.3)));break;
+ case'Sand Golem':F.drift=3;break;
+ case'Sun Tyrant':F.rage=4;F.fog=2;break;
+ case'Ice Wraith':G.buff=0;G.prot=false;A.forEach(x=>x.inv=0);G.sp=Math.max(0,G.sp-15);break;
+ case'Yeti':F.haste=3;break;
+ case'Frost Archer':R().wk=2;break;
+ case'Frost Dragon':e.sh=Math.round(80*K);F.haste=3;break;
+ case'Shadow Knight':e.hp=Math.max(1,e.hp-Math.round(e.mh*.15));F.rage=3;break;
+ case'Void Mage':A.forEach(x=>x.sil=2);break;
+ case'Demon':{let s=0;A.forEach(x=>{s+=dmgP(x,Math.max(1,Math.round(x.hp*.12)))});e.hp=Math.min(e.mh,e.hp+s);DM.push({s:e.nm,t:e,n:s,k:'h'});break}
+ case'Void Sovereign':F.drift=2;R().stun=1;G.buff=0;G.prot=false;A.forEach(x=>x.inv=0);break}
+ say(v?t[1].replace(/[Aa] hero/,v.nm):t[1]);flush();render();await sleep(1300)}
+async function foes(){
+ CUR='☠ Poison';clr();for(const e of alive(G.en))if(e.psn>0){e.psn--;hurt(e,8)}
+ flush();if(DM.length)await sleep(1100);
+ render();
+ for(const e of G.en){
+  if(e.hp>0&&e.stl){const rg=e.stl;e.stl=null;if(rg.hp>0){say(`🗝 ${rg.nm} steals ${e.nm}’s turn and acts in its place!`);render();await sleep(1000);await act(rg);if(!alive(G.en).length)return;await sleep(500);continue}}
+  if(e.hp>0)e.mp=Math.min(e.mx,e.mp+(e.boss?15:20));
+  if(e.hp>0&&e.hl>0){const h=Math.min(e.hl,e.mh-e.hp);e.hp+=h;e.hl=0;DM.push({s:e.nm,t:e,n:h,k:'h'});say(`🌿 ${e.nm} finishes regrowing and heals ${h} HP!`);render();await sleep(900)}
+  if(e.hp>0&&e.stn>0){e.stn--;say(`💫 ${e.nm} is stunned and cannot act!`);render();await sleep(800);continue}
+  if(e.hp>0&&alive(G.p).length&&alive(G.p).every(x=>x.inv>0)){if(e===alive(G.en)[0])say('👻 The enemies cannot see anyone!');continue}
+  for(let n=0;n<(e.boss?2:1);n++){if(e.hp<=0||!alive(G.p).length)break;if(n==0&&e.mp>=e.mx&&!(e.burn>0)){await cast(e);continue}await foe(e,pk(e.at))}
+  if(e.burn>0)e.burn--;if(!alive(G.p).length)return;if(e.hp>0)await sleep(1100);
+ }
+ $('#tw').style.display='none';
+ for(const u of alive(G.p))if(u.psn>0){u.psn--;const pd=u.pd||6;u.hp=Math.max(0,u.hp-pd);if(u.psn<=0)u.pd=0;DM.push({s:'☠ Poison',t:u,n:pd,k:'p',r:'miss'});say(u.hp?`${u.nm} suffers ${pd} poison damage.`:`${u.nm} succumbs to poison!`)}
+ G.p.forEach(u=>{u.guard=u.taunt=u.rip=u.dbl=false;if(u.weak>0)u.weak--;if(u.inv>0)u.inv--;['sil','mark','wk'].forEach(k=>{if(u[k]>0)u[k]--});if(!(u.weak>0))u.wt=false});G.prot=false;['chill','rage','haste'].forEach(k=>{if(G.fx[k]>0)G.fx[k]--});flush();render();
+}
+async function battle(){
+ while(true){
+  for(const u of alive(G.p)){if(!alive(G.en).length)return'w';if(u.stun>0){u.stun--;say(`💫 ${u.nm} is paralysed and loses the turn!`);render();await sleep(1100);continue}await act(u)}
+  if(!alive(G.en).length)return'w';
+  await sleep(1300);await foes();if(!alive(G.p).length)return'l';
+ }
+}
+function spawn(){
+ const A=AR[G.a],sc=1.3+.15*G.a;G.ds=1.6*(1+.1*G.a);let l;
+ if(G.f==4)l=[A.b];else l=Array.from({length:Math.min(3,[1,2,2,3][G.f]+(G.a>1?1:0))},()=>pk(A.e));
+ const cnt={};l.forEach(x=>cnt[x[0]]=(cnt[x[0]]||0)+1);const used={};
+ G.en=l.map(x=>{let nm=x[0];if(cnt[nm]>1){used[nm]=(used[nm]||0)+1;nm+=' '+'ABC'[used[nm]-1]}const hp=Math.round(x[1]*sc*1.75*(G.f==4?.75:1));return{nm,bn:x[0],h:H[x[0]],hp,mh:hp,at:x[2],boss:G.f==4,psn:0,mx:x[0]=='Treant Elder'?150:100,mp:Math.round(rnd(15,45)),sp:G.f==4?BS[G.a]:TYS[[...x[0]].reduce((s,c)=>s+c.charCodeAt(0),0)%5]}});
+}
+async function run(){
+ while(true){
+  spawn();logs=[];clr();render();setBg(G.a);mus((G.f==4?'b':'a')+G.a);say(`${G.f==4?'BOSS FIGHT! ':''}${G.en.map(e=>e.nm).join(', ')} appear${G.en.length>1?'':'s'}!`);await sleep(1100);
+  if(G.f==4){yell(G.en[0],'s');await sleep(1700)}const r=await battle();$('#tw').style.display='none';
+  if(r=='l'){sfx('lose');say('Your party has been wiped out.');await menu([{id:1,l:'Try again'}]);location.reload();return}
+  G.p.forEach(u=>{u.psn=0;u.act=u.guard=u.taunt=u.rip=u.wt=false;u.weak=u.inv=u.sil=u.mark=u.stun=u.wk=0;u.exh=false;if(u.hp>0)u.hp=u.mh});G.sp=10;G.buff=0;G.prot=false;G.fx={drift:0,chill:0,fog:0,rage:0,haste:0};render();
+  if(G.f==4){
+   if(G.a==4){sfx('win');say(`VICTORY! The Void Sovereign falls.\nSurvivors: ${alive(G.p).map(u=>u.nm).join(', ')} (${alive(G.p).length}/3)`);await menu([{id:1,l:'Play again'}]);location.reload();return}
+   
+   sfx('win');say(`${AR[G.a].n} cleared! Choose one hero to upgrade.`);render();{const o=alive(G.p).filter(u=>LV(u)<2);if(o.length){const id=await menu(o.map(u=>({id:G.p.indexOf(u),l:upTxt(u)})));const u=G.p[id];doUp(u);say(`⬆ ${u.nm} becomes a ${u.tt}!`)}}render();await menu([{id:1,l:`Enter ${AR[G.a+1].n} ▶`}]);G.a++;G.f=0;
+  }else{sfx('win');say('Victory! The party recovers fully.');await menu([{id:1,l:'Next fight ▶'}]);G.f++}
+ }
+}
+setup();
+</script></body></html>
